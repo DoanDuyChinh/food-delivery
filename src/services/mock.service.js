@@ -49,7 +49,7 @@ const mockData = {
       description: 'Fresh Atlantic salmon seared to perfection, served with roasted vegetables and lemon-dill sauce.',
       price: 24000,
       isAvailable: true,
-      image: 'https://source.unsplash.com/random/300x200/?salmon'
+      image: 'https://static01.nyt.com/images/2024/02/13/multimedia/LH-pan-seared-salmon-lwzt/LH-pan-seared-salmon-lwzt-mediumSquareAt3X.jpg'
     },
     {
       id: 2,
@@ -57,7 +57,7 @@ const mockData = {
       description: 'Al dente pasta with sun-dried tomatoes, olives, feta cheese, and fresh herbs in a light olive oil sauce.',
       price: 27000,
       isAvailable: true,
-      image: 'https://source.unsplash.com/random/300x200/?pasta'
+      image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrNGbsLrQaN7TyYv93p2gGhyDKcd9MzqshkA&s'
     },
     {
       id: 3,
@@ -65,7 +65,7 @@ const mockData = {
       description: 'An assortment of grilled shrimp, scallops, and fish fillets, served with a citrus butter sauce and seasonal vegetables.',
       price: 32000,
       isAvailable: true,
-      image: 'https://source.unsplash.com/random/300x200/?seafood'
+      image: 'https://eastsidebarandgrill.com.au/wp-content/uploads/2022/03/Eastside_Seafood-Platter_1200x800px.jpg'
     },
     {
       id: 4,
@@ -73,7 +73,7 @@ const mockData = {
       description: 'Tender chicken breast marinated in lemon and herbs, grilled to perfection and served with roasted potatoes.',
       price: 22000,
       isAvailable: true,
-      image: 'https://source.unsplash.com/random/300x200/?chicken'
+      image: 'https://www.foodandwine.com/thmb/t9YqzGbmH-huAbV6xitCQs0-G4s=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/FAW-recipes-herb-and-lemon-roasted-chicken-hero-c4ba0aec56884683be482c47b1e1df11.jpg'
     },
     {
       id: 5,
@@ -81,7 +81,7 @@ const mockData = {
       description: 'Creamy arborio rice cooked with wild mushrooms, asparagus, and parmesan cheese.',
       price: 20000,
       isAvailable: true,
-      image: 'https://source.unsplash.com/random/300x200/?risotto'
+      image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6dgoSlQmnXyuVWdQUZU3ERZAgbXmXGtlU6g&s'
     }
   ],
   orders: [
