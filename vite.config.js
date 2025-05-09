@@ -13,14 +13,11 @@ export default defineConfig({
   build: {
     // Generate sourcemaps for production build
     sourcemap: false,
-    // Reduce the file size
-    minify: 'terser',
-    // Configure optimization
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
+    // Use esbuild for minification instead of terser
+    minify: 'esbuild',
+    // esbuild options
+    esbuildOptions: {
+      target: ['esnext', 'edge88', 'firefox78', 'chrome87', 'safari14'],
     },
   },
   // Fix issues with Render's build process
