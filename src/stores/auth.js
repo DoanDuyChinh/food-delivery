@@ -1,33 +1,46 @@
 import { defineStore } from 'pinia';
-import { authService } from '../services/auth.service';
-import { userService } from '../services/user.service';
+import { authService } from '@/services/auth.service';
+import { userService } from '@/services/user.service';
+
+// Helper function to check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
-    token: null,
+    token: isBrowser ? localStorage.getItem('token') : null,
+    userRole: isBrowser ? localStorage.getItem('userRole') : null,
     loading: false,
     error: null,
   }),
   
   getters: {
     isLoggedIn: (state) => !!state.token,
-    userRole: (state) => state.user?.role || null,
-    isAdmin: (state) => state.user?.role === 'admin',
-    isCustomer: (state) => state.user?.role === 'customer',
-    isShipper: (state) => state.user?.role === 'shipper',
+    isAdmin: (state) => state.userRole === 'admin',
+    isShipper: (state) => state.userRole === 'shipper',
+    isCustomer: (state) => state.userRole === 'customer',
   },
   
   actions: {
-    setToken(token) {
-      this.token = token;
-      localStorage.setItem('token', token);
-    },
-    
     setUser(user) {
       this.user = user;
-      if (user?.role) {
-        localStorage.setItem('userRole', user.role);
+    },
+    
+    setToken(token) {
+      this.token = token;
+      if (isBrowser && token) {
+        localStorage.setItem('token', token);
+      } else if (isBrowser) {
+        localStorage.removeItem('token');
+      }
+    },
+    
+    setUserRole(role) {
+      this.userRole = role;
+      if (isBrowser && role) {
+        localStorage.setItem('userRole', role);
+      } else if (isBrowser) {
+        localStorage.removeItem('userRole');
       }
     },
     
@@ -38,6 +51,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const response = await authService.login(credentials);
         this.setToken(response.accessToken);
+        this.setUserRole(response.role);
         this.setUser({ 
           userId: response.userId,
           role: response.role
@@ -116,9 +130,12 @@ export const useAuthStore = defineStore('auth', {
     
     logout() {
       this.user = null;
-      this.token = null;
-      localStorage.removeItem('token');
-      localStorage.removeItem('userRole');
+      this.setToken(null);
+      this.setUserRole(null);
+      
+      if (isBrowser) {
+        localStorage.removeItem('userId');
+      }
     },
   },
 });

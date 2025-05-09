@@ -34,7 +34,7 @@
             <div v-if="isCustomer" class="relative">
               <router-link to="/checkout" class="p-2 rounded-full text-gray-600 hover:text-primary focus:outline-none">
                 <ShoppingCartIcon class="h-6 w-6" />
-                <span v-if="cartItemCount > 0" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-primary rounded-full">
+                <span v-if="cartItemCount > 0" class="absolute top-6 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-primary rounded-full">
                   {{ cartItemCount }}
                 </span>
               </router-link>

@@ -243,6 +243,24 @@ const mockData = {
 // Helper function to simulate API delay
 const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Helper function to check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+
+// Safe localStorage getter
+const getFromStorage = (key) => {
+  if (isBrowser) {
+    return localStorage.getItem(key);
+  }
+  return null;
+};
+
+// Safe localStorage setter
+const setToStorage = (key, value) => {
+  if (isBrowser) {
+    localStorage.setItem(key, value);
+  }
+};
+
 // Mock service for development
 export const mockService = {
   async get(endpoint) {
@@ -276,7 +294,7 @@ export const mockService = {
     }
     
     if (endpoint === '/users/profile') {
-      const userId = localStorage.getItem('userId');
+      const userId = getFromStorage('userId');
       const user = mockData.users.find(u => u.userId === userId);
       if (!user) throw new Error('User not found');
       const { password, ...userWithoutPassword } = user;
@@ -294,7 +312,7 @@ export const mockService = {
       const user = mockData.users.find(u => u.email === email && u.password === password);
       if (!user) throw new Error('Invalid credentials');
       
-      localStorage.setItem('userId', user.userId);
+      setToStorage('userId', user.userId);
       
       return {
         userId: user.userId,
@@ -316,7 +334,7 @@ export const mockService = {
     if (endpoint === '/orders') {
       const newOrder = {
         id: mockData.orders.length + 1,
-        userId: localStorage.getItem('userId'),
+        userId: getFromStorage('userId') || '1',
         ...data,
         status: 'created',
         subtotal: data.orderItems.reduce((sum, item) => {
@@ -369,7 +387,7 @@ export const mockService = {
     await delay();
     
     if (endpoint === '/users/profile') {
-      const userId = localStorage.getItem('userId');
+      const userId = getFromStorage('userId');
       const userIndex = mockData.users.findIndex(u => u.userId === userId);
       if (userIndex === -1) throw new Error('User not found');
       
@@ -410,7 +428,7 @@ export const mockService = {
     await delay();
     
     if (endpoint === '/users/password') {
-      const userId = localStorage.getItem('userId');
+      const userId = getFromStorage('userId');
       const userIndex = mockData.users.findIndex(u => u.userId === userId);
       if (userIndex === -1) throw new Error('User not found');
       
