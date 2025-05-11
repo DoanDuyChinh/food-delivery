@@ -39,7 +39,7 @@
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div v-for="item in menuItems" :key="item.id" class="bg-white shadow-md rounded-lg overflow-hidden">
               <div class="h-48 bg-gray-200 relative">
-                <img :src="item.image || 'https://via.placeholder.com/300x200'" :alt="item.name" class="w-full h-full object-cover" />
+                <img :src="item.imageUrl || 'https://via.placeholder.com/300x200'" :alt="item.name" class="w-full h-full object-cover" />
                 <span 
                   :class="item.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
                   class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium"
@@ -326,7 +326,7 @@ const editItem = (item) => {
   itemForm.name = item.name;
   itemForm.description = item.description;
   itemForm.price = item.price;
-  itemForm.image = item.image || '';
+  itemForm.image = item.imageUrl || '';
   itemForm.isAvailable = item.isAvailable;
   showEditModal.value = true;
 };

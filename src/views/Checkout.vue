@@ -3,6 +3,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <h1 class="text-3xl font-bold text-gray-900 mb-6">Checkout</h1>
       
+      <!-- Empty cart message -->
       <div v-if="cartStore.isEmpty" class="bg-white shadow-md rounded-lg p-8 text-center">
         <ShoppingCartIcon class="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <h2 class="text-xl font-medium text-gray-900 mb-2">Your cart is empty</h2>
@@ -12,9 +13,11 @@
         </router-link>
       </div>
       
+      <!-- Checkout form -->
       <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Order Summary -->
+        <!-- Order Summary and Delivery Info -->
         <div class="lg:col-span-2">
+          <!-- Order Summary -->
           <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
               <h2 class="text-lg font-medium text-gray-900">Order Summary</h2>
@@ -24,7 +27,7 @@
                 <div v-for="item in cartStore.items" :key="item.id" class="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
                   <div class="flex items-center">
                     <div class="flex-shrink-0 w-16 h-16 bg-gray-200 rounded overflow-hidden">
-                      <img :src="item.image" :alt="item.name" class="w-full h-full object-cover" />
+                      <img :src="item.imageUrl" :alt="item.name" class="w-full h-full object-cover" />
                     </div>
                     <div class="ml-4">
                       <p class="text-sm font-medium text-gray-900">{{ item.name }}</p>
@@ -53,18 +56,34 @@
             <div class="p-6">
               <form @submit.prevent="placeOrder">
                 <div class="grid grid-cols-1 gap-6">
+                  <!-- Shipping Address -->
                   <div>
                     <label for="shippingAddress" class="block text-sm font-medium text-gray-700">Shipping Address</label>
+                    
+                    <!-- Manual address input field -->
                     <textarea
                       id="shippingAddress"
                       v-model="shippingAddress"
                       rows="3"
                       required
-                      class="form-input mt-1"
+                      class="form-input mt-1 w-full"
                       placeholder="Enter your complete address"
                     ></textarea>
+                    
+                    <!-- Display selected address details -->
+                    <div v-if="shippingAddress" class="mt-2 p-3 bg-gray-50 rounded text-gray-700 text-sm">
+                      <div class="font-medium">Your address:</div>
+                      <div class="mt-1">{{ shippingAddress }}</div>
+                      <button 
+                        @click.prevent="shippingAddress = ''" 
+                        class="mt-2 text-primary text-xs hover:underline"
+                      >
+                        Change address
+                      </button>
+                    </div>
                   </div>
                   
+                  <!-- Phone Number -->
                   <div>
                     <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Phone Number</label>
                     <input
@@ -77,6 +96,7 @@
                     />
                   </div>
                   
+                  <!-- Special Instructions -->
                   <div>
                     <label for="specialInstructions" class="block text-sm font-medium text-gray-700">Special Instructions (Optional)</label>
                     <textarea
@@ -90,7 +110,7 @@
                 </div>
               </form>
             </div>
-          </div>
+          </div>  
         </div>
         
         <!-- Order Total -->
@@ -113,7 +133,6 @@
                   <span class="text-lg font-medium">Total</span>
                   <span class="text-lg font-bold text-primary">{{ formatPrice(cartStore.subtotal + deliveryFee) }}</span>
                 </div>
-                
                 <div class="mt-6">
                   <button
                     @click="placeOrder"
@@ -130,7 +149,6 @@
                     <span v-else>Place Order</span>
                   </button>
                 </div>
-                
                 <div class="mt-4">
                   <p class="text-sm text-gray-500">
                     By placing your order, you agree to our <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>.
@@ -146,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toast-notification';
 import { useAuthStore } from '@/stores/auth';
@@ -165,6 +183,7 @@ const phoneNumber = ref('');
 const specialInstructions = ref('');
 const isSubmitting = ref(false);
 
+// Format price to Vietnamese currency
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
@@ -181,7 +200,8 @@ const placeOrder = async () => {
     const orderData = {
       shippingAddress: shippingAddress.value,
       phoneNumber: phoneNumber.value,
-      orderItems: cartStore.cartItems
+      orderItems: cartStore.cartItems,
+      specialInstructions: specialInstructions.value
     };
     
     const response = await orderService.createOrder(orderData);

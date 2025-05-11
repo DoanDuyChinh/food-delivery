@@ -27,5 +27,12 @@ export default defineConfig({
   server: {
     port: process.env.PORT || 5173,
     host: true, // This is needed for Docker/Render to work properly
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   }
 });

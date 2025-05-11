@@ -1,8 +1,8 @@
 import api from './api';
 import { mockService } from './mock.service';
 
-// Use mockService for development, real API for production
-const service = import.meta.env.PROD ? api : mockService;
+// Use real API instead of mockService
+const service = import.meta.env.PROD ? api : api;  // Changed from mockService to api
 
 export const userService = {
   async getProfile() {

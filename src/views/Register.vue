@@ -245,6 +245,7 @@ const handleSubmit = async () => {
     // Remove confirmPassword and termsAccepted from data to be sent
     const { confirmPassword, termsAccepted, ...userData } = form;
     
+    // Make sure the data format matches what your API expects
     await authStore.register(userData);
     
     $toast.success('Registration successful! Please log in.');

@@ -23,7 +23,7 @@
             </svg>
           </div>
           
-          <div v-else-if="shippers.length === 0" class="bg-white shadow-md rounded-lg p-8 text-center">
+          <div v-else-if="shippers?.length === 0 || shippers == null" class="bg-white shadow-md rounded-lg p-8 text-center">
             <TruckIcon class="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h2 class="text-xl font-medium text-gray-900 mb-2">No shippers found</h2>
             <p class="text-gray-600 mb-6">Start adding delivery personnel to your team</p>
@@ -236,6 +236,7 @@ import {
   PhoneIcon,
   TagIcon
 } from '@heroicons/vue/24/outline';
+import axios from 'axios';
 
 const $toast = useToast();
 const loading = ref(true);
@@ -277,8 +278,24 @@ const loadShippers = async () => {
   loading.value = true;
   
   try {
-    const data = await deliveryService.getShippers();
-    shippers.value = data;
+    // const data = await deliveryService.getShippers();
+    axios.get('http://localhost:8000/shippers',
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+    )
+      .then(response => {
+        const data = response.data;
+        shippers.value = data;
+      })
+      .catch(error => {
+        console.error('Error fetching shippers:', error);
+        $toast.error('Failed to load shippers');
+      });
+    // shippers.value = data;
   } catch (error) {
     $toast.error(error.message || 'Failed to load shippers');
   } finally {
@@ -296,8 +313,22 @@ const addShipper = async () => {
       role: 'shipper'
     };
     
-    const newShipper = await deliveryService.createShipper(newShipperData);
-    shippers.value.push(newShipper);
+    // const newShipper = await deliveryService.createShipper(newShipperData);
+    await axios.post('http://localhost:8000/shippers', newShipperData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+      .then(response => {
+        const newShipper = response.data;
+        shippers.value.push(newShipper);
+      })
+      .catch(error => {
+        console.error('Error adding shipper:', error);
+        $toast.error('Failed to add shipper');
+      });
+    // shippers.value.push(newShipper);
     
     $toast.success('Shipper added successfully!');
     showAddModal.value = false;

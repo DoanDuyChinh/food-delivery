@@ -1,23 +1,27 @@
 import api from './api';
-import { mockService } from './mock.service';
-
-// Use mockService for development, real API for production
-const service = import.meta.env.PROD ? api : mockService;
 
 export const deliveryService = {
-  async getShipperDeliveries(shipperId, params) {
-    return service.get(`/delivery/shipper/${shipperId}`, { params });
+  // Create a new delivery
+  async createDelivery(deliveryData) {
+    return api.post('/delivery', deliveryData);
   },
   
-  async updateDeliveryStatus(deliveryId, status) {
-    return service.put(`/delivery/${deliveryId}/status`, { status });
+  // Update delivery status
+  async updateDeliveryStatus(deliveryId, statusData) {
+    return api.put(`/delivery/${deliveryId}/status`, statusData);
   },
   
-  async getShippers(params) {
-    return service.get('/shippers', { params });
+  // Get delivery details by order ID
+  async getDeliveryByOrderId(orderId) {
+    return api.get(`/delivery/order/${orderId}`);
   },
   
-  async createShipper(shipperData) {
-    return service.post('/shippers', shipperData);
-  }
+  // Get deliveries by shipper ID
+  async getDeliveriesByShipperId(shipperId, params = {}) {
+    return api.get(`/delivery/shipper/${shipperId}`, { params });
+  },
+
+  // async getShippers(params = {}) {
+  //   return api.get('/api/shippers', { params });
+  // }
 };

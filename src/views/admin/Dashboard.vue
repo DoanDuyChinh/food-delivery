@@ -142,6 +142,7 @@ import {
   MapPinIcon,
   ArrowRightIcon
 } from '@heroicons/vue/24/outline';
+import axios from 'axios';
 
 const $toast = useToast();
 const loading = ref(true);
@@ -206,8 +207,22 @@ const fetchData = async () => {
     orders.value = ordersData;
     
     // Get all shippers
-    const shippersData = await deliveryService.getShippers();
-    shippers.value = shippersData;
+    // const shippersData = await deliveryService.getShippers();
+    await axios.get('http://localhost:8000/shippers',
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+    )
+      .then(response => {
+        shippers.value = response.data;
+      })
+      .catch(error => {
+        throw new Error('Failed to fetch shippers: ' + error.message);
+      });
+    // shippers.value = shippersData;
   } catch (error) {
     $toast.error(error.message || 'Failed to load dashboard data');
   } finally {

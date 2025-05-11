@@ -39,7 +39,7 @@
               <p class="text-gray-600 text-sm">Chung cư Season Avenue</p>
             </li>
             <li>
-              <p class="text-gray-600 text-sm">+1-415-555-8723</p>
+              <p class="text-gray-600 text-sm">0964046724</p>
             </li>
             <li>
               <p class="text-gray-600 text-sm">info@coastaldelivery.com</p>

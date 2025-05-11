@@ -201,17 +201,22 @@ const updateRestaurant = async () => {
   updating.value = true;
   
   try {
+    // Prepare data according to API requirements
     const updatedRestaurant = {
       name: form.name,
       description: form.description,
-      address: form.address,
       phoneNumber: form.phoneNumber,
-      isActive: restaurant.value.isActive,
-      openTime: formatTimeForAPI(form.openTime),
-      closeTime: formatTimeForAPI(form.closeTime)
+      // Only include these fields if they're needed by your API
+      address: form.address,
+      // isActive: restaurant.value.isActive,
+      // openTime: formatTimeForAPI(form.openTime),
+      // closeTime: formatTimeForAPI(form.closeTime)
     };
     
+    // Send update request to the API
     await restaurantService.updateRestaurantInfo(updatedRestaurant);
+    
+    // Update local state
     restaurant.value = { ...restaurant.value, ...updatedRestaurant };
     
     $toast.success('Restaurant information updated successfully!');

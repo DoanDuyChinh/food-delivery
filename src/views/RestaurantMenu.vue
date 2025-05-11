@@ -46,7 +46,7 @@
         
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div v-for="item in menuItems" :key="item.id" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-            <img :src="item.image" :alt="item.name" class="w-full h-48 object-cover" />
+            <img :src="item.imageUrl" :alt="item.name" class="w-full h-48 object-cover" />
             <div class="p-6">
               <div class="flex justify-between">
                 <h3 class="text-lg font-medium text-gray-900">{{ item.name }}</h3>

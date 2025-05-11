@@ -174,16 +174,17 @@ const handleSubmit = async () => {
   }
 };
 
+// You might want to update this with credentials that work with your API
 const fillDemoCredentials = (userType) => {
   if (userType === 'customer') {
-    email.value = 'duong@example.com';
-    password.value = 'supersecurepassword';
+    email.value = 'customer@example.com';
+    password.value = 'password123';
   } else if (userType === 'admin') {
     email.value = 'admin@example.com';
-    password.value = 'adminpassword';
+    password.value = 'password123';
   } else if (userType === 'shipper') {
     email.value = 'shipper@example.com';
-    password.value = 'shipperpassword';
+    password.value = 'password123';
   }
 };
 </script>

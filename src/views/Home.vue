@@ -88,7 +88,7 @@
           
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             <div v-for="item in featuredMenuItems" :key="item.id" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-              <img :src="item.image" :alt="item.name" class="w-full h-48 object-cover" />
+              <img :src="item.imageUrl" :alt="item.name" class="w-full h-48 object-cover" />
               <div class="p-6">
                 <div class="flex justify-between items-start">
                   <h3 class="text-lg font-medium text-gray-900">{{ item.name }}</h3>
@@ -143,7 +143,7 @@
             </div>
           </div>
           <div class="mt-12 lg:mt-0">
-            <img src="https://images.unsplash.com/photo-1560624052-44df263f8dfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Restaurant Interior" class="rounded-lg shadow-xl" />
+            <img src="https://datxanhmienbac.com.vn/public/uploads/source/du-an-bds/chung-cu/Seasons-Avenue/tong-quan-du-an-seasons-avenue.jpg" alt="Restaurant Interior" class="rounded-lg shadow-xl" />
           </div>
         </div>
       </div>

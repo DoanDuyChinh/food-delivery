@@ -10,7 +10,7 @@
         </svg>
       </div>
       
-      <div v-else-if="orders.length === 0" class="bg-white shadow-md rounded-lg p-8 text-center">
+      <div v-else-if="orders?.length === 0 || orders == null" class="bg-white shadow-md rounded-lg p-8 text-center">
         <ShoppingBagIcon class="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <h2 class="text-xl font-medium text-gray-900 mb-2">No orders yet</h2>
         <p class="text-gray-600 mb-6">Start ordering delicious food today!</p>

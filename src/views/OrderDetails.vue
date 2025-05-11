@@ -73,6 +73,32 @@
               </div>
             </div>
             
+            <!-- Delivery Map -->
+            <div v-if="order.delivery && order.delivery.geometryLine" class="mb-6">
+              <h2 class="text-lg font-medium text-gray-900 mb-3">Delivery Route</h2>
+              <div class="bg-gray-50 rounded-lg overflow-hidden">
+                <div id="deliveryMap" class="h-64 w-full"></div>
+                <div class="p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center">
+                      <div class="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
+                      <span class="text-sm text-gray-700">Restaurant</span>
+                    </div>
+                    <div class="flex items-center">
+                      <div class="h-3 w-3 rounded-full bg-red-500 mr-2"></div>
+                      <span class="text-sm text-gray-700">Delivery Address</span>
+                    </div>
+                  </div>
+                  <div class="text-sm text-gray-600">
+                    <div class="flex justify-between">
+                      <span>Distance: {{ (order.delivery.distance).toFixed(1) }} km</span>
+                      <span>Estimated time: {{ Math.round(order.delivery.duration) }} min</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <h2 class="text-lg font-medium text-gray-900 mb-3">Order Items</h2>
             <div class="bg-gray-50 rounded-lg overflow-hidden mb-6">
               <table class="min-w-full divide-y divide-gray-200">
@@ -134,7 +160,6 @@
                 Track Delivery
                 <MapPinIcon class="ml-2 h-5 w-5" />
               </router-link>
-              
               <button 
                 v-if="order.status === 'created'" 
                 @click="cancelOrder"
@@ -181,6 +206,22 @@ import {
   TruckIcon, 
   ExclamationCircleIcon 
 } from '@heroicons/vue/24/outline';
+// Import Leaflet library for mapping
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix Leaflet marker icon issue
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 
 const route = useRoute();
 const router = useRouter();
@@ -291,7 +332,116 @@ const fetchOrder = async () => {
   }
 };
 
+// Function to decode the polyline string
+const decodePolyline = (str) => {
+  const points = [];
+  let index = 0, lat = 0, lng = 0;
+
+  while (index < str.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lng += dlng;
+
+    points.push([lat * 1e-5, lng * 1e-5]);
+  }
+
+  return points;
+};
+
+// Initialize delivery map
+const initMap = () => {
+  if (!order.value?.delivery?.geometryLine) return;
+  
+  // Remove existing map if any
+  const container = L.DomUtil.get('deliveryMap');
+  if (container != null) {
+    container._leaflet_id = null;
+  }
+
+  // Get coordinates from the API response
+  const fromCoords = order.value.delivery.fromCoords;
+  const toCoords = order.value.delivery.toCoords;
+  
+  // Create map centered on midpoint between from and to
+  const map = L.map('deliveryMap').setView([
+    (fromCoords[1] + toCoords[1]) / 2, // Latitude
+    (fromCoords[0] + toCoords[0]) / 2  // Longitude
+  ], 14);
+
+  // Add OpenStreetMap tile layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  // Add markers for restaurant and delivery address
+  // Note: The API provides [longitude, latitude] but Leaflet needs [latitude, longitude]
+  const restaurantMarker = L.marker([fromCoords[1], fromCoords[0]], {
+    icon: L.divIcon({
+      html: `<div class="h-4 w-4 rounded-full bg-green-500 border-2 border-white"></div>`,
+      className: 'custom-div-icon',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    })
+  }).addTo(map);
+  restaurantMarker.bindPopup('Restaurant');
+
+  const deliveryMarker = L.marker([toCoords[1], toCoords[0]], {
+    icon: L.divIcon({
+      html: `<div class="h-4 w-4 rounded-full bg-red-500 border-2 border-white"></div>`,
+      className: 'custom-div-icon',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    })
+  }).addTo(map);
+  deliveryMarker.bindPopup('Delivery Address');
+
+  // Draw the route polyline using the geometryLine from the API
+  try {
+    // Decode the polyline string from the API
+    const routePoints = decodePolyline(order.value.delivery.geometryLine);
+    
+    // Flip coordinates to match [lat, lng] format required by Leaflet
+    const leafletPoints = routePoints.map(point => [point[0], point[1]]);
+    
+    // Draw the route on the map
+    L.polyline(leafletPoints, { color: '#4F46E5', weight: 5 }).addTo(map);
+    
+    // Fit the map to the bounds of the route
+    map.fitBounds(L.latLngBounds(leafletPoints));
+  } catch (error) {
+    console.error('Error drawing route:', error);
+    // Fallback: draw a straight line between the two points
+    L.polyline([
+      [fromCoords[1], fromCoords[0]],
+      [toCoords[1], toCoords[0]]
+    ], { color: '#4F46E5', weight: 5, dashArray: '5, 10' }).addTo(map);
+  }
+};
+
 onMounted(() => {
-  fetchOrder();
+  fetchOrder().then(() => {
+    // Initialize map after order data is loaded
+    if (order.value?.delivery) {
+      // Small timeout to ensure DOM is ready
+      setTimeout(() => {
+        initMap();
+      }, 100);
+    }
+  });
 });
 </script>

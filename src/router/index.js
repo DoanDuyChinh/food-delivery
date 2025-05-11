@@ -95,6 +95,13 @@ const routes = [
     name: 'AdminShippers',
     meta: { requiresAuth: true, role: 'admin' }
   },
+  {
+    path: '/admin/orders/:id',
+    name: 'AdminOrderDetails',
+    component: () => import('@/views/admin/OrderDetails.vue'),
+    props: true,
+    meta: { requiresAuth: true, role: 'admin' }
+  },
   
   // Shipper routes
   { 

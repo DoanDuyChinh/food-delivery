@@ -1,31 +1,38 @@
 import api from './api';
-import { mockService } from './mock.service';
-
-// Use mockService for development, real API for production
-const service = import.meta.env.PROD ? api : mockService;
 
 export const restaurantService = {
+  // Public endpoints (no auth required)
+  
+  // Get restaurant information - public endpoint
   async getRestaurantInfo() {
-    return service.get('/restaurant');
+    return api.get('/restaurant');
   },
   
-  async updateRestaurantInfo(restaurantData) {
-    return service.patch('/restaurant', restaurantData);
-  },
-  
+  // Get restaurant menu - public endpoint
   async getMenu() {
-    return service.get('/restaurant/menu');
+    return api.get('/restaurant/menu');
   },
   
+  // Protected endpoints (auth required)
+  
+  // Update restaurant information (admin only)
+  async updateRestaurantInfo(restaurantData) {
+    // Ensure we're using PATCH method to the correct endpoint
+    return api.patch('/restaurant', restaurantData);
+  },
+  
+  // Add new menu item (admin only)
   async addMenuItem(menuItemData) {
-    return service.post('/restaurant/menu/item', menuItemData);
+    return api.post('/restaurant/menu/item', menuItemData);
   },
   
+  // Update menu item (admin only)
   async updateMenuItem(itemId, menuItemData) {
-    return service.patch(`/restaurant/menu/item/${itemId}`, menuItemData);
+    return api.patch(`/restaurant/menu/item/${itemId}`, menuItemData);
   },
   
+  // Delete menu item (admin only)
   async deleteMenuItem(itemId) {
-    return service.delete(`/restaurant/menu/item/${itemId}`);
+    return api.delete(`/restaurant/menu/item/${itemId}`);
   }
 };
