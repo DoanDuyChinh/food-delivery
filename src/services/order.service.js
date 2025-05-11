@@ -18,6 +18,8 @@ export const orderService = {
   
   // Update order status
   async updateOrderStatus(orderId, statusData) {
-    return api.put(`/orders/${orderId}/status`, statusData);
+    return api.put(`/orders/${orderId}/status`, {
+      status: statusData,
+    });
   }
 };

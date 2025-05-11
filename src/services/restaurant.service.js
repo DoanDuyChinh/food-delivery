@@ -12,6 +12,10 @@ export const restaurantService = {
   async getMenu() {
     return api.get('/restaurant/menu');
   },
+
+  async getMenuById(menuId) {
+    return api.get(`/restaurant/menu/item/${menuId}`);
+  },
   
   // Protected endpoints (auth required)
   

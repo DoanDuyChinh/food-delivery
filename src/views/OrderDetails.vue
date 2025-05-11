@@ -114,11 +114,16 @@
                   <tr v-for="item in order.orderItems" :key="item.menuItemId">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       <div class="flex items-center">
-                        <div class="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <span class="text-gray-500 text-xs">Item</span>
+                        <div v-if="menuItems[item.menuItemId]?.imageUrl" class="flex-shrink-0 h-10 w-10 rounded-full mr-4 overflow-hidden">
+                          <img class="h-10 w-10 object-cover" :src="menuItems[item.menuItemId].imageUrl" alt="" />
                         </div>
-                        <div class="ml-4">
-                          <div class="text-sm font-medium text-gray-900">Menu Item #{{ item.menuItemId }}</div>
+                        <div>
+                          <div class="text-sm font-medium text-gray-900">
+                            {{ menuItems[item.menuItemId]?.name || `Menu Item #${item.menuItemId}` }}
+                          </div>
+                          <div v-if="menuItems[item.menuItemId]?.description" class="text-sm text-gray-500 truncate max-w-xs">
+                            {{ menuItems[item.menuItemId].description }}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -160,6 +165,7 @@
                 Track Delivery
                 <MapPinIcon class="ml-2 h-5 w-5" />
               </router-link>
+              
               <button 
                 v-if="order.status === 'created'" 
                 @click="cancelOrder"
@@ -231,6 +237,7 @@ const $toast = useToast();
 const loading = ref(true);
 const order = ref(null);
 const cancellingOrder = ref(false);
+const menuItems = ref({});
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -317,6 +324,23 @@ const reorderItems = async () => {
   }
 };
 
+const fetchMenuItems = async () => {
+  if (!order.value || !order.value.orderItems) return;
+  
+  try {
+    // Get menu from restaurant service
+    const menu = await restaurantService.getMenu();
+    
+    // Create a lookup object for quick access
+    menuItems.value = menu.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
+  } catch (error) {
+    console.error('Error fetching menu items:', error);
+  }
+};
+
 const fetchOrder = async () => {
   loading.value = true;
   
@@ -324,6 +348,9 @@ const fetchOrder = async () => {
     const orderId = parseInt(route.params.id);
     const response = await orderService.getOrderById(orderId);
     order.value = response;
+    
+    // Fetch menu details
+    await fetchMenuItems();
   } catch (error) {
     $toast.error(error.message || 'Failed to load order details');
     order.value = null;

@@ -24,6 +24,7 @@ import AdminShippers from '../views/admin/Shippers.vue';
 import ShipperDashboard from '../views/shipper/Dashboard.vue';
 import ShipperDeliveries from '../views/shipper/Deliveries.vue';
 import ShipperProfile from '../views/shipper/Profile.vue';
+import ShipperDeliveryDetail from '@/views/shipper/DeliveryDetail.vue';
 
 const routes = [
   // Public routes
@@ -120,6 +121,12 @@ const routes = [
     path: '/shipper/profile', 
     component: ShipperProfile, 
     name: 'ShipperProfile',
+    meta: { requiresAuth: true, role: 'shipper' }
+  },
+  {
+    path: '/shipper/deliveries/:id',
+    name: 'ShipperDeliveryDetail',
+    component: ShipperDeliveryDetail,
     meta: { requiresAuth: true, role: 'shipper' }
   },
 ];

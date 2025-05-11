@@ -58,6 +58,10 @@
                 </div>
                 
                 <div class="p-6">
+                  <!-- Order Information Section -->
+                  
+                  
+                  <!-- Delivery Details -->
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div>
                       <h3 class="text-sm text-gray-500 uppercase tracking-wider mb-1">Distance</h3>
@@ -110,9 +114,16 @@
                     </div>
                   </div>
                   
+                  <!-- Actions -->
                   <div class="flex justify-between items-center">
                     <router-link 
-                      :to="`/shipper/deliveries/${delivery.deliveryId}`"
+                      :to="{
+                        path: '/shipper/deliveries/detail',
+                        query: { 
+                          deliveryId: delivery.deliveryId,
+                          orderId: delivery.orderId
+                        }
+                      }"
                       class="btn btn-outline flex items-center"
                     >
                       <EyeIcon class="h-4 w-4 mr-2" />
@@ -152,18 +163,23 @@ import { ref, onMounted } from 'vue';
 import { useToast } from 'vue-toast-notification';
 import { useAuthStore } from '@/stores/auth';
 import { deliveryService } from '@/services/delivery.service';
+import { userService } from '@/services/user.service';
+import { orderService } from '@/services/order.service';
+import axios from 'axios';
 import ShipperSidebar from '@/components/shipper/ShipperSidebar.vue';
 
 // Import each icon individually to avoid the named export 'n' error
 import { TruckIcon } from '@heroicons/vue/24/outline';
 import { ArrowPathIcon } from '@heroicons/vue/24/outline';
 import { EyeIcon } from '@heroicons/vue/24/outline';
+import { UserIcon, PhoneIcon } from '@heroicons/vue/24/outline';
 
 const $toast = useToast();
 const authStore = useAuthStore();
 const loading = ref(true);
-const deliveries = ref([]);
+const deliveries = ref([]); // Initialize as empty array instead of null
 const statusFilter = ref('');
+const orderDetails = ref({}); // Store order details indexed by orderId
 
 const formatDistance = (distance) => {
   if (!distance) return 'Unknown';
@@ -226,7 +242,8 @@ const loadDeliveries = async () => {
   loading.value = true;
   
   try {
-    const shipperId = authStore.user?.userId;
+    const user = await userService.getProfile();
+    const shipperId = user.userId;
     if (!shipperId) {
       throw new Error('User ID not found');
     }
@@ -236,51 +253,67 @@ const loadDeliveries = async () => {
       params.status = statusFilter.value;
     }
     
-    // In a real app, this would fetch from the API
-    // For demo, use mock data
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Create some mock deliveries
-    deliveries.value = [
-      {
-        deliveryId: 1,
-        orderId: 1,
-        distance: 1.410828,
-        duration: 4.85605,
-        fee: 7054,
-        status: "delivered"
-      },
-      {
-        deliveryId: 2,
-        orderId: 2,
-        distance: 1.410828,
-        duration: 4.85605,
-        fee: 7054,
-        status: "delivering"
-      },
-      {
-        deliveryId: 3,
-        orderId: 3,
-        distance: 2.32,
-        duration: 8.5,
-        fee: 10000,
-        status: "assigned"
+    // Use the actual API endpoint
+    await axios.get(`http://localhost:8000/delivery/shipper/${shipperId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
-    ];
-    
-    // Apply status filter if set
-    if (statusFilter.value) {
-      deliveries.value = deliveries.value.filter(d => d.status === statusFilter.value);
-    }
+    })
+    .then(response => {
+      deliveries.value = response.data || []; // Ensure we always have an array
+      
+      // After loading deliveries, fetch order details for each delivery
+      // fetchOrderDetails();
+    })
+    .catch(error => {
+      throw new Error(error.response?.data?.message || 'Failed to load deliveries');
+    });
   } catch (error) {
     $toast.error(error.message || 'Failed to load deliveries');
+    deliveries.value = []; // Set to empty array on error
   } finally {
     loading.value = false;
   }
 };
 
+// Add this new function to fetch order details
+const fetchOrderDetails = async () => {
+  for (const delivery of deliveries.value) {
+    if (delivery.orderId && !orderDetails.value[delivery.orderId]) {
+      try {
+        // await axios.get(`http://localhost:8000/orders/${delivery.orderId}`, {
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     'Authorization': `Bearer ${localStorage.getItem('token')}`
+        //   }
+        // })
+        // .then(response => {
+        //   orderDetails.value[delivery.orderId] = response.data;
+        //   // Update delivery with additional order info
+        //   delivery.orderAmount = response.data.totalAmount;
+        //   delivery.itemCount = response.data.orderItems?.length || 0;
+        //   delivery.customer = response.data.customer;
+        //   delivery.paymentMethod = response.data.paymentMethod;
+        //   delivery.specialInstructions = response.data.specialInstructions;
+        // })
+        // .catch(error => {
+        //   console.error(`Failed to load order ${delivery.orderId}:`, error);
+        // });
+        const response = await orderService.getOrderById(delivery.orderId);
+        // delivery.orderAmount = response.data.totalAmount;
+        // delivery.itemCount = response.data.orderItems?.length || 0;
+        // delivery.customer = response.data.user_id;
+      } catch (error) {
+        console.error(`Error fetching order ${delivery.orderId}:`, error);
+      }
+    }
+  }
+};
+
 const updateDeliveryStatus = async (deliveryId, newStatus) => {
   try {
+    // Call the API to update delivery status
     await deliveryService.updateDeliveryStatus(deliveryId, newStatus);
     
     // Update delivery in list
@@ -293,6 +326,18 @@ const updateDeliveryStatus = async (deliveryId, newStatus) => {
   } catch (error) {
     $toast.error(error.message || 'Failed to update delivery status');
   }
+};
+
+const formatOrderTime = (timestamp) => {
+  if (!timestamp) return 'N/A';
+  
+  const date = new Date(timestamp);
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
 onMounted(() => {

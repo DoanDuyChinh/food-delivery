@@ -78,9 +78,17 @@
             <h2 class="text-lg font-medium text-gray-900">Customer Information</h2>
           </div>
           <div class="p-6">
-            <p class="flex items-center mb-3">
+            <p v-if="customerData" class="flex items-center mb-3">
+              <UserIcon class="h-5 w-5 text-gray-400 mr-2" />
+              <span class="text-gray-700">{{ customerData.name }}</span>
+            </p>
+            <p v-else class="flex items-center mb-3">
               <UserIcon class="h-5 w-5 text-gray-400 mr-2" />
               <span class="text-gray-700">Customer #{{ order.userId }}</span>
+            </p>
+            <p v-if="customerData" class="flex items-center mb-3">
+              <EnvelopeIcon class="h-5 w-5 text-gray-400 mr-2" />
+              <span class="text-gray-700">{{ customerData.email }}</span>
             </p>
             <p class="flex items-center mb-3">
               <MapPinIcon class="h-5 w-5 text-gray-400 mr-2" />
@@ -88,7 +96,7 @@
             </p>
             <p class="flex items-center">
               <PhoneIcon class="h-5 w-5 text-gray-400 mr-2" />
-              <span class="text-gray-700">{{ order.phoneNumber }}</span>
+              <span class="text-gray-700">{{ customerData?.phone || order.phoneNumber }}</span>
             </p>
           </div>
         </div>
@@ -139,7 +147,17 @@
               <tr v-for="item in order.orderItems" :key="item.menuItemId">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
-                    <div class="text-sm font-medium text-gray-900">Menu Item #{{ item.menuItemId }}</div>
+                    <div v-if="menuItems[item.menuItemId]?.imageUrl" class="flex-shrink-0 h-10 w-10 mr-3">
+                      <img class="h-10 w-10 rounded-full object-cover" :src="menuItems[item.menuItemId].imageUrl" alt="" />
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">
+                        {{ menuItems[item.menuItemId]?.name || `Menu Item #${item.menuItemId}` }}
+                      </div>
+                      <!-- <div v-if="menuItems[item.menuItemId]?.description" class="text-sm text-gray-500 truncate max-w-xs">
+                        {{ menuItems[item.menuItemId].description }}
+                      </div> -->
+                    </div>
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
@@ -176,23 +194,18 @@
         <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
           <h2 class="text-lg font-medium text-gray-900">Delivery Route</h2>
         </div>
-        <div id="deliveryMap" style="height: 512px; width: 100%;"></div> <!-- Using inline style for double height -->> <!-- Changed from h-64 to h-128 (twice the height) -->
+        <div id="deliveryMap" class="h-64 w-full"></div>
         <div class="p-4">
           <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-700">Delivery Address</span>
             <div class="flex items-center">
               <div class="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
               <span class="text-sm text-gray-700">Restaurant</span>
             </div>
-            <div class="flex items-center">
-              <div class="h-3 w-3 rounded-full bg-red-500 mr-2"></div>
-              <span class="text-sm text-gray-700">Delivery Address</span>
-            </div>
           </div>
-          <div class="text-sm text-gray-600">
-            <div class="flex justify-between">
-              <span>Distance: {{ (order.delivery.distance).toFixed(1) }} km</span>
-              <span>Estimated time: {{ Math.round(order.delivery.duration) }} min</span>
-            </div>
+          <div class="flex justify-between">
+            <span>Distance: {{ (order.delivery.distance).toFixed(1) }} km</span>
+            <span>Estimated time: {{ Math.round(order.delivery.duration) }} min</span>
           </div>
         </div>
       </div>
@@ -205,14 +218,17 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'vue-toast-notification';
 import { orderService } from '@/services/order.service';
-import {
-  ArrowLeftIcon,
+import { restaurantService } from '@/services/restaurant.service';
+import axios from 'axios';
+import { 
+  ArrowLeftIcon, 
+  ChevronDownIcon,
   UserIcon,
   MapPinIcon,
   PhoneIcon,
   TruckIcon,
   ExclamationCircleIcon,
-  ChevronDownIcon
+  EnvelopeIcon
 } from '@heroicons/vue/24/outline';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -227,17 +243,21 @@ let DefaultIcon = L.icon({
   iconSize: [25, 41],
   iconAnchor: [12, 41]
 });
-
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const route = useRoute();
 const $toast = useToast();
 
+// Store customer details
 const id = ref(route.params.id);
 const order = ref(null);
 const loading = ref(true);
 const isStatusDropdownOpen = ref(false);
 const updatingStatus = ref(false);
+const customerData = ref(null);
+
+// Add menu items ref to store menu item details
+const menuItems = ref({});
 
 const availableStatuses = [
   { value: 'created', label: 'Order Placed' },
@@ -269,7 +289,6 @@ const formatStatus = (status) => {
     'delivered': 'Delivered',
     'cancelled': 'Cancelled'
   };
-  
   return statusMap[status] || status;
 };
 
@@ -281,7 +300,6 @@ const getStatusClass = (status) => {
     'delivered': 'bg-green-100 text-green-800',
     'cancelled': 'bg-red-100 text-red-800'
   };
-  
   return statusClassMap[status] || 'bg-gray-100 text-gray-800';
 };
 
@@ -292,7 +310,6 @@ const formatDeliveryStatus = (status) => {
     'delivered': 'Delivered',
     'cancelled': 'Cancelled'
   };
-  
   return statusMap[status] || status;
 };
 
@@ -332,7 +349,7 @@ const updateOrderStatus = async (status) => {
 const decodePolyline = (str) => {
   const points = [];
   let index = 0, lat = 0, lng = 0;
-
+  
   while (index < str.length) {
     let b, shift = 0, result = 0;
     do {
@@ -355,14 +372,13 @@ const decodePolyline = (str) => {
 
     points.push([lat * 1e-5, lng * 1e-5]);
   }
-
+  
   return points;
 };
 
-// Initialize delivery map
 const initMap = () => {
   if (!order.value?.delivery?.geometryLine) return;
-  
+
   // Remove existing map if any
   const container = L.DomUtil.get('deliveryMap');
   if (container != null) {
@@ -372,7 +388,7 @@ const initMap = () => {
   // Get coordinates
   const fromCoords = order.value.delivery.fromCoords;
   const toCoords = order.value.delivery.toCoords;
-  
+    
   // Create map centered on midpoint between from and to
   const map = L.map('deliveryMap').setView([
     (fromCoords[1] + toCoords[1]) / 2,
@@ -428,6 +444,29 @@ const initMap = () => {
   }
 };
 
+// Add function to fetch menu items
+const fetchMenuItems = async () => {
+  if (!order.value || !order.value.orderItems) return;
+  
+  try {
+    // Get unique menu item IDs
+    const menuItemIds = [...new Set(order.value.orderItems.map(item => item.menuItemId))];
+    
+    // Fetch details for each menu item
+    for (const menuItemId of menuItemIds) {
+      try {
+        const menuItem = await restaurantService.getMenuById(menuItemId);
+        menuItems.value[menuItemId] = menuItem;
+      } catch (error) {
+        console.error(`Error fetching menu item ${menuItemId}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching menu items:', error);
+  }
+};
+
+// Update fetchOrder to also fetch menu items
 const fetchOrder = async () => {
   loading.value = true;
   
@@ -436,11 +475,32 @@ const fetchOrder = async () => {
     // Use the appropriate service method for fetching admin order details
     const response = await orderService.getOrderById(orderId);
     order.value = response;
+    
+    // After fetching the order, fetch related data
+    fetchCustomerDetails(order.value.user_id);
+    await fetchMenuItems();
   } catch (error) {
     $toast.error(error.message || 'Failed to load order details');
     order.value = null;
   } finally {
     loading.value = false;
+  }
+};
+
+// Fetch customer details
+const fetchCustomerDetails = async (userId) => {
+  try {
+    const response = await axios.get(`http://localhost:8000/users/${userId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (response.status === 200) {
+      customerData.value = response.data;
+    }
+  } catch (error) {
+    console.error('Error fetching customer details:', error);
   }
 };
 
@@ -458,6 +518,10 @@ onMounted(() => {
       setTimeout(() => {
         initMap();
       }, 100);
+    }
+    // Fetch customer details if order has a userId
+    if (order.value?.userId) {
+      fetchCustomerDetails(order.value.user_id);
     }
   });
 });

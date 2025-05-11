@@ -138,7 +138,7 @@
                               <label for="image" class="block text-sm font-medium text-gray-700">Image URL</label>
                               <input
                                 id="image"
-                                v-model="itemForm.image"
+                                v-model="itemForm.imageUrl"
                                 type="url"
                                 class="form-input mt-1"
                                 placeholder="https://example.com/image.jpg"
@@ -285,7 +285,7 @@ const itemForm = reactive({
   name: '',
   description: '',
   price: 0,
-  image: '',
+  imageUrl: '',
   isAvailable: true
 });
 
@@ -310,7 +310,7 @@ const resetForm = () => {
   itemForm.name = '';
   itemForm.description = '';
   itemForm.price = 0;
-  itemForm.image = '';
+  itemForm.imageUrl = '';
   itemForm.isAvailable = true;
   currentItemId.value = null;
 };
@@ -326,7 +326,7 @@ const editItem = (item) => {
   itemForm.name = item.name;
   itemForm.description = item.description;
   itemForm.price = item.price;
-  itemForm.image = item.imageUrl || '';
+  itemForm.imageUrl = item.imageUrl || '';
   itemForm.isAvailable = item.isAvailable;
   showEditModal.value = true;
 };

@@ -76,7 +76,7 @@
                       #{{ order.id }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      <div>User #{{ order.userId }}</div>
+                      <div>{{ getUserName(order.user_id) }}</div>
                       <div class="text-gray-500 text-xs mt-1">{{ truncateAddress(order.shippingAddress) }}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -201,6 +201,7 @@ const statusFilter = ref('');
 const showUpdateStatusModal = ref(false);
 const selectedStatus = ref('');
 const selectedOrderId = ref(null);
+const userDetails = ref({}); // Store user details
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -214,7 +215,6 @@ const formatStatus = (status) => {
     'delivered': 'Delivered',
     'cancelled': 'Cancelled'
   };
-  
   return statusMap[status] || status;
 };
 
@@ -226,7 +226,6 @@ const getStatusClass = (status) => {
     'delivered': 'bg-green-100 text-green-800',
     'cancelled': 'bg-red-100 text-red-800'
   };
-  
   return statusClassMap[status] || 'bg-gray-100 text-gray-800';
 };
 
@@ -240,6 +239,41 @@ const getItemsCount = (order) => {
   return order.orderItems.reduce((total, item) => total + item.quantity, 0);
 };
 
+// Function to fetch user details
+const fetchUserDetails = async () => {
+  // Extract unique user IDs from orders
+  console.log("orders.value", orders.value);
+  
+  const userIds = orders.value.map(order => order.user_id);
+  
+  // Fetch user details for each unique user ID
+  for (const userId of userIds) {    
+    if (!userDetails.value[userId]) {
+      try {
+        const response = await fetch(`http://localhost:8000/users/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          userDetails.value[userId] = userData;
+        }
+      } catch (error) {
+        console.error(`Error fetching details for user ${userId}:`, error);
+      }
+    }
+  }
+};
+
+const getUserName = (userId) => {
+  if (userDetails.value[userId]) {
+    return userDetails.value[userId].name || userDetails.value[userId].email || `User #${userId}`;
+  }
+  return `User #${userId}`;
+};
+
 const loadOrders = async () => {
   loading.value = true;
   
@@ -251,6 +285,9 @@ const loadOrders = async () => {
     
     const data = await orderService.getOrders(params);
     orders.value = data;
+    
+    // Fetch user details for each order
+    await fetchUserDetails();
   } catch (error) {
     $toast.error(error.message || 'Failed to load orders');
   } finally {
@@ -265,7 +302,6 @@ const canUpdateStatus = (order) => {
 
 const availableStatuses = computed(() => {
   const currentOrder = orders.value.find(o => o.id === selectedOrderId.value);
-  
   if (!currentOrder) return [];
   
   const statuses = [];

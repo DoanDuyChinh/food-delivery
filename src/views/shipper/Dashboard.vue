@@ -147,13 +147,14 @@ const shipperData = ref({
   totalDeliveries: 0,
   status: 'unavailable'
 });
-const deliveries = ref([]);
+const deliveries = ref([]); // Initialize as empty array
 const todayDeliveries = ref(0);
 
 const currentDeliveries = computed(() => {
-  return deliveries.value.filter(d => 
-    d.status === 'assigned' || d.status === 'delivering'
-  );
+  // Ensure deliveries.value is an array before filtering
+  return Array.isArray(deliveries.value) 
+    ? deliveries.value.filter(d => d.status === 'assigned' || d.status === 'delivering')
+    : [];
 });
 
 const formatDistance = (distance) => {
@@ -206,10 +207,11 @@ const getStatusClass = (status) => {
 
 const toggleAvailability = async () => {
   try {
-    // Simulate API call to toggle availability
+    // Update shipper availability status
     const newStatus = shipperData.value.status === 'available' ? 'unavailable' : 'available';
     
-    // In a real app, you would call an API endpoint to update the shipper's status
+    // In a real app, you would update this via an API
+    // For now we're just updating the local state
     await new Promise(resolve => setTimeout(resolve, 500));
     
     shipperData.value.status = newStatus;
@@ -223,35 +225,40 @@ const fetchShipperData = async () => {
   loading.value = true;
   
   try {
-    // For demo purposes, use the current user data from AuthStore
+    // Get shipper user data from auth store
     const user = authStore.user;
     
     if (user && user.role === 'shipper') {
-      // In a real app, you'd fetch this data from an API
+      // Set basic shipper data
       shipperData.value = {
-        totalDeliveries: user.totalDeliveries || 42,
-        status: user.status || 'available'
+        totalDeliveries: user.totalDeliveries || 0,
+        status: user.status || 'unavailable'
       };
       
-      // Mock some deliveries for demo
-      if (currentDeliveries.value.length === 0) {
-        deliveries.value = [
-          {
-            deliveryId: 1,
-            orderId: 2,
-            distance: 1.41,
-            duration: 12,
-            fee: 7054,
-            status: 'delivering'
-          }
-        ];
+      // Get active deliveries for the shipper
+      const shipperId = user.userId;
+      if (shipperId) {
+        try {
+          const response = await deliveryService.getDeliveriesByShipper(shipperId, {
+            status: 'assigned' // Get only active deliveries: delivering
+          });
+          
+          deliveries.value = response || []; // Ensure we always have an array
+          
+          // Calculate today's deliveries
+          const today = new Date().toDateString();
+          todayDeliveries.value = deliveries.value.filter(d => {
+            return d.createdAt ? new Date(d.createdAt).toDateString() === today : false;
+          }).length;
+        } catch (error) {
+          console.error('Error fetching deliveries:', error);
+          deliveries.value = []; // Reset to empty array on error
+        }
       }
-      
-      // Set today's deliveries (mock data)
-      todayDeliveries.value = 3;
     }
   } catch (error) {
     $toast.error(error.message || 'Failed to load shipper data');
+    deliveries.value = []; // Reset to empty array on error
   } finally {
     loading.value = false;
   }
