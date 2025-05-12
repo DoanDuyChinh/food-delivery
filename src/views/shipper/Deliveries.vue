@@ -141,7 +141,7 @@
                       
                       <button 
                         v-if="delivery.status === 'delivering'"
-                        @click="updateDeliveryStatus(delivery.deliveryId, 'delivered')"
+                        @click="updateDeliveryStatus(delivery.deliveryId, 'completed')"
                         class="btn btn-primary"
                       >
                         Mark as Delivered
@@ -313,6 +313,9 @@ const fetchOrderDetails = async () => {
 
 const updateDeliveryStatus = async (deliveryId, newStatus) => {
   try {
+    if(newStatus === 'completed') {
+      await orderService.updateOrderStatus(deliveryId, 'delivered');
+    }
     // Call the API to update delivery status
     await deliveryService.updateDeliveryStatus(deliveryId, newStatus);
     
